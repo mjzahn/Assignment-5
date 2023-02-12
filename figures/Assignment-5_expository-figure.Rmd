@@ -1,0 +1,91 @@
+---
+title: "FISH 549 - Assignment 5"
+subtitle: "Creating an expository figure"
+author: "Marie Zahn"
+date: '2023-02-11'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+
+In this assignment, I am using data from the [{FSAdata}](https://github.com/droglenc/FSAdata) package that contains age, sex, length, and mass data for Siscowet Lake Trout captured at four locations in Lake Superior.
+
+## Objective
+
+I'm interested in seeing how total length (mm) and weight (g) of fish vary among the four sampling locations: Blind Sucker, Deer Park, Grand Marais, Little Lake Harbor. First, I will explore the data by plotting weight vs. length with observations colored by location. Then I will run a linear regression to analyze how these variables differ across the four sites.
+
+
+## 1. Create exploratory figure
+
+```{r load packages}
+## load all packages needed for analysis/plotting
+library(here)
+library(ggplot2)
+library(tidyverse)
+
+```
+
+
+```{r load data}
+trout_df <- read.csv(here('data/siscowet.csv'))
+
+## inspect the data
+head(trout_df)
+
+```
+
+```{r exploratory fig}
+## make simple plot showing length vs. weight and coloring by location
+trout_df %>% ggplot(aes(x=len, y=wgt, color=locID)) +
+  geom_point() +
+  theme_minimal() +
+  ylab("Weight (g)") + 
+  xlab("Total length (mm)") 
+
+```
+
+
+Based on this exploratory figure, we can see there are likely differences between sites but it's difficult to tell because the points are overlapping and there is one outlier point from Little Lake Harbor. This point has an exceedingly high weight measurement that is probably erroneous; I would go back to the original data to ensure this observation was correct. According to this record, the fish was ~33 lbs and ~22 inches - that's one FAT fish!
+
+## 2. Create expository figure
+
+Here I remove the outlier point, plot the data again (faceted by location) and added a model fit.
+
+```{r remove outlier point}
+## identify and remove point with erroneous weight measurement
+trout_filter_df <- trout_df %>% filter(wgt < 10000)
+
+## plot to make sure this filter is correct
+## make simple plot showing length vs. weight and coloring by location
+trout_filter_df %>% ggplot(aes(x=len, y=wgt, color=locID)) +
+  geom_point() +
+  theme_minimal() +
+  ylab("Weight (g)") + 
+  xlab("Total length (mm)") 
+
+```
+
+Looks good so now we can make the final figure:
+
+```{r expository fig}
+trout_filter_df %>% ggplot(aes(x=len, y=wgt, color=locID)) +
+  geom_point() +
+  theme_minimal() +
+  ylab("Weight (g)") + 
+  xlab("Total length (mm)") +
+  facet_wrap(~locID) +
+  labs(color="Location",
+       title = "Siscowet Lake Trout body length vs weight") +
+  theme(
+    plot.title.position = "plot",
+    axis.text = element_text(size=12),
+    legend.position = "none") +
+  geom_smooth(method = "lm", se = FALSE)
+
+```
+
+As expected, there is a positive relationship between body length and weight across all four sites. The slope does vary between the four locations, with Grand Marais having the lowest slope and generally the smallest fish.
